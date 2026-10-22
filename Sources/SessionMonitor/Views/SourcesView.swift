@@ -24,7 +24,7 @@ struct SourcesView: View {
                                         .foregroundStyle(source.available ? Color.secondary : Color.orange)
                                 }
                                 Text(source.message).font(.callout).fixedSize(horizontal: false, vertical: true)
-                                if source.app != .harness {
+                                if ![.harness, .t3].contains(source.app) {
                                     Text(store.preferences.executable(source.app).map { "CLI: " + $0 } ?? "CLI unavailable · reading local history still works; set its path in Settings for actions")
                                         .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                                 }

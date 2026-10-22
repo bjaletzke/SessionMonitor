@@ -20,6 +20,7 @@ private extension AgentApp {
         case .codex: .blue
         case .claude: .orange
         case .hermes: .purple
+        case .t3: .indigo
         case .harness: .teal
         }
     }

@@ -2,13 +2,14 @@ import Foundation
 import CoreFoundation
 
 enum AgentApp: String, CaseIterable, Codable, Sendable, Identifiable {
-    case codex = "Codex", claude = "Claude Code", hermes = "Hermes", harness = "Harness"
+    case codex = "Codex", claude = "Claude Code", hermes = "Hermes", t3 = "T3 Code", harness = "Harness"
     var id: String { rawValue }
     var symbol: String {
         switch self {
         case .codex: "terminal"
         case .claude: "asterisk"
         case .hermes: "paperplane"
+        case .t3: "bubble.left.and.bubble.right"
         case .harness: "point.3.connected.trianglepath.dotted"
         }
     }
@@ -91,6 +92,9 @@ struct Session: Identifiable, Codable, Sendable, Equatable {
     var isSubagent = false
     var savedBookmark = false
     var record: SessionRecord?
+    var environmentID: String?
+    /// Exact native-thread ownership reported by a loaded host chat.
+    var hostSessionID: String?
 
     var workspaceName: String {
         workspace.isEmpty ? "No workspace" : URL(fileURLWithPath: workspace).lastPathComponent
@@ -122,6 +126,7 @@ struct ScanConfiguration: Sendable {
     var hermesHome: String
     var harnessDirectory: String
     var limit: Int
+    var t3Home = ""
 }
 
 /// Counters retain provider semantics. Cached input/reasoning may be subsets;
