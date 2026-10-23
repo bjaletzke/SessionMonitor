@@ -20,6 +20,7 @@ private extension AgentApp {
         case .codex: .blue
         case .claude: .orange
         case .hermes: .purple
+        case .t3: .indigo
         case .harness: .teal
         }
     }
@@ -119,6 +120,10 @@ struct UsageByAppChart: View {
                 .frame(height: CGFloat(max(overviews.count, 1) * 42 + 70))
                 Text("Logarithmic token axis keeps smaller apps visible; segment widths are not proportional. Recorded total means no breakdown is available. Codex input excludes cache reads; output excludes reasoning. Hermes bars include separately recorded cache and reasoning counters. Coverage differs by app; see the records below.")
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                if overviews.contains(where: { $0.app == .t3 }) {
+                    Text("T3 is a hosting view and overlaps the provider archive totals. Do not add these bars. T3 bars exclude cache reads and writes from input, and reasoning from output.")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
     }
@@ -159,6 +164,10 @@ struct RecentUsageChart: View {
             if apps.isEmpty { Text("No recorded token usage in the last seven days of loaded sessions.").font(.caption).foregroundStyle(.secondary) }
             Text("Approximate: each session's cumulative total is counted on its last-activity day; only sessions in the current load window are included.")
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            if sessions.contains(where: { $0.app == .t3 && $0.usage != nil }) {
+                Text("T3 uses recorded main-agent turns; active turns and imported history may be missing. Exact matched native records are omitted when T3 usage is available. Unmatched sources may overlap.")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }

@@ -21,12 +21,12 @@ struct SidebarView: View {
             }
             Section("Applications") {
                 ForEach(AgentApp.allCases) { app in
-                    scopeRow(app.rawValue, icon: app.symbol, count: store.recentSessions.filter { $0.app == app }.count, scope: .app(app))
+                    scopeRow(app.rawValue, icon: app.symbol, count: store.applicationSessions(app).count, scope: .app(app))
                 }
             }
             Section("Related work") {
                 scopeRow("Worktrees", icon: "arrow.triangle.branch", count: store.recentSessions.filter { $0.worktree?.isLinked == true }.count, scope: .worktrees)
-                scopeRow("Subagents", icon: "person.2", count: store.recentIncludingSubagents.filter(\.isSubagent).count, scope: .subagents)
+                scopeRow("Subagents", icon: "person.2", count: store.recentSubagents.count, scope: .subagents)
             }
             Section("Library") {
                 Button { store.showingUsage = true } label: { Label("Overall usage", systemImage: "chart.bar") }

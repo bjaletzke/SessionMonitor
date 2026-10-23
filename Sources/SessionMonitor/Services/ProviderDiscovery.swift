@@ -10,7 +10,8 @@ enum ProviderDiscovery {
         return ScanConfiguration(codexHome: value("CODEX_HOME", home + "/.codex"),
                                  claudeHome: value("CLAUDE_CONFIG_DIR", home + "/.claude"),
                                  hermesHome: value("HERMES_HOME", home + "/.hermes"),
-                                 harnessDirectory: value("SESSIONMONITOR_HARNESS_DIR", home + "/Library/Application Support/SessionMonitor/events"), limit: 200)
+                                 harnessDirectory: value("SESSIONMONITOR_HARNESS_DIR", home + "/Library/Application Support/SessionMonitor/events"), limit: 200,
+                                 t3Home: value("T3CODE_HOME", home + "/.t3"))
     }
     private static func isExecutable(_ path: String) -> Bool {
         let resolved = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
@@ -27,7 +28,7 @@ enum ProviderDiscovery {
         case .codex: name = "codex"
         case .claude: name = "claude"
         case .hermes: name = "hermes"
-        case .harness: return nil
+        case .t3, .harness: return nil
         }
         let configured = override.nilIfEmpty ?? environment["SESSIONMONITOR_" + name.uppercased() + "_EXECUTABLE"]?.nilIfEmpty
         if let configured {

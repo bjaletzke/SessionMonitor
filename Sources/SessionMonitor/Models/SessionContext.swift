@@ -20,7 +20,7 @@ struct WorktreeInfo: Codable, Sendable, Equatable {
 }
 
 enum SessionRelationKind: String, Codable, Sendable {
-    case parent, subagent, continuedFrom, continuedAs, child, forkedFrom, forkedAs
+    case parent, subagent, continuedFrom, continuedAs, child, forkedFrom, forkedAs, providerSession, host
     var label: String {
         switch self {
         case .parent: "Parent"
@@ -30,6 +30,8 @@ enum SessionRelationKind: String, Codable, Sendable {
         case .child: "Child session"
         case .forkedFrom: "Forked from"
         case .forkedAs: "Forked as"
+        case .providerSession: "Provider record"
+        case .host: "Host chat"
         }
     }
     var isChild: Bool { [.subagent, .child, .continuedAs].contains(self) }

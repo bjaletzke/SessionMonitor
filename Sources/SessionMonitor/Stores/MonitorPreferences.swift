@@ -5,6 +5,7 @@ import Observation
     var codexHome: String { didSet { defaults.set(codexHome, forKey: "codexHome") } }
     var claudeHome: String { didSet { defaults.set(claudeHome, forKey: "claudeHome") } }
     var hermesHome: String { didSet { defaults.set(hermesHome, forKey: "hermesHome") } }
+    var t3Home: String { didSet { defaults.set(t3Home, forKey: "t3Home") } }
     var harnessDirectory: String { didSet { defaults.set(harnessDirectory, forKey: "harnessDirectory") } }
     var codexExecutable: String { didSet { defaults.set(codexExecutable, forKey: "codexExecutable") } }
     var claudeExecutable: String { didSet { defaults.set(claudeExecutable, forKey: "claudeExecutable") } }
@@ -20,6 +21,7 @@ import Observation
         codexHome = defaults.string(forKey: "codexHome") ?? paths.codexHome
         claudeHome = defaults.string(forKey: "claudeHome") ?? paths.claudeHome
         hermesHome = defaults.string(forKey: "hermesHome") ?? paths.hermesHome
+        t3Home = defaults.string(forKey: "t3Home") ?? paths.t3Home
         harnessDirectory = defaults.string(forKey: "harnessDirectory") ?? paths.harnessDirectory
         codexExecutable = defaults.string(forKey: "codexExecutable") ?? ""
         claudeExecutable = defaults.string(forKey: "claudeExecutable") ?? ""
@@ -37,7 +39,7 @@ import Observation
         case .codex: override = codexExecutable
         case .claude: override = claudeExecutable
         case .hermes: override = hermesExecutable
-        case .harness: override = ""
+        case .t3, .harness: override = ""
         }
         return ProviderDiscovery.executable(app, override: override)
     }
@@ -46,10 +48,10 @@ import Observation
         case .codex: LocalFiles.expanded(codexHome)
         case .claude: LocalFiles.expanded(claudeHome)
         case .hermes: URL(fileURLWithPath: session.sourcePath).deletingLastPathComponent().path
-        case .harness: nil
+        case .t3, .harness: nil
         }
     }
     var configuration: ScanConfiguration {
-        ScanConfiguration(codexHome: codexHome, claudeHome: claudeHome, hermesHome: hermesHome, harnessDirectory: harnessDirectory, limit: sessionLimit)
+        ScanConfiguration(codexHome: codexHome, claudeHome: claudeHome, hermesHome: hermesHome, harnessDirectory: harnessDirectory, limit: sessionLimit, t3Home: t3Home)
     }
 }

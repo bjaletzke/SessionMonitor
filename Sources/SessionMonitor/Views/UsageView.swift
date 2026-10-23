@@ -71,6 +71,10 @@ struct UsageView: View {
                                 Text(overview.scope).font(.callout)
                                 Text(overview.recordedAt).font(.callout.weight(.medium)).foregroundStyle(overview.app == .claude ? Color.orange : Color.secondary)
                                 if let usage = overview.usage { TokenUsageView(usage: usage, app: overview.app) }
+                                else if overview.app == .t3 {
+                                    Text("No T3 consumption counters available. Imported history and active turns may have no recorded turn usage; context-window figures are not token consumption.")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
                             }.padding(8).frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }

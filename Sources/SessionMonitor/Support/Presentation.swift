@@ -47,6 +47,7 @@ enum DesktopActions {
         case .codex: return URL(string: "codex://").flatMap { NSWorkspace.shared.urlForApplication(toOpen: $0) }
         case .claude: return NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.anthropic.claudefordesktop")
         case .hermes: return NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.nousresearch.hermes.setup")
+        case .t3: return NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.t3tools.t3code")
         case .harness: return nil
         }
     }
@@ -66,12 +67,17 @@ enum DesktopActions {
             guard session.desktopSessionID.range(of: "^local_[A-Za-z0-9-]{1,64}$", options: .regularExpression) != nil else { return nil }
             url.scheme = "claude"; url.host = "code"; url.path = "/continue"
             url.queryItems = [URLQueryItem(name: "session", value: session.desktopSessionID)]
+        case .t3:
+            guard let environment = session.environmentID, UUID(uuidString: environment) != nil,
+                  session.sessionID.range(of: "^[A-Za-z0-9_-]{1,200}$", options: .regularExpression) != nil else { return nil }
+            url.scheme = "t3code"; url.host = "threads"; url.path = "/\(environment)/\(session.sessionID)"
         case .hermes, .harness: return nil
         }
         return url.url
     }
     static func openLabel(_ session: Session) -> String {
         if let url = sessionURL(session), NSWorkspace.shared.urlForApplication(toOpen: url) != nil { return "Open session" }
+        if session.app == .t3 { return "Open T3 Code" }
         return resumeCommand(session) == nil ? "Open unavailable" : "Resume in Terminal"
     }
     static func openSession(_ session: Session, executable: String? = nil, providerHome: String? = nil, allowDiscovery: Bool = true) throws {
@@ -79,6 +85,7 @@ enum DesktopActions {
             guard NSWorkspace.shared.open(url) else { throw ActionError.failed("The application could not open this session link.") }
             return
         }
+        if session.app == .t3 { try openApplication(.t3); return }
         guard let executable = executable ?? (allowDiscovery ? ProviderDiscovery.executable(session.app) : nil) else { throw ActionError.failed("CLI not found. Set an executable path in Settings or install the provider CLI.") }
         guard let command = resumeCommand(session, executable: executable, providerHome: providerHome) else { throw ActionError.failed("This source has no session-opening action.") }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("SessionMonitor-commands", isDirectory: true)
@@ -105,7 +112,7 @@ enum DesktopActions {
         case .hermes:
             let root = URL(fileURLWithPath: session.sourcePath).deletingLastPathComponent().path
             command = "HERMES_HOME=\(shellQuote(providerHome ?? root)) \(executable.map(shellQuote) ?? "hermes") --resume \(shellQuote(session.sessionID))"
-        case .harness: return nil
+        case .t3, .harness: return nil
         }
         return session.workspace.isEmpty ? command : "cd \(shellQuote(session.workspace)) && \(command)"
     }
