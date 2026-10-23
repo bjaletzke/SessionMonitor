@@ -179,6 +179,80 @@ final class T3AdapterTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: database(root).path))
     }
 
+    func testConsumptionSumsNormalizedTurnsAcrossProvidersWithoutContextSnapshots() throws {
+        let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        try thread(root, id: "host")
+        try native(root, thread: "host", id: "codex")
+        try native(root, thread: "host", id: "claude", driver: "claudeAgent")
+        try consumption(root, thread: "host", native: "codex", id: "one", counters: ["inputTokens": 100, "outputTokens": 20, "cachedInputTokens": 80, "reasoningTokens": 5])
+        try consumption(root, thread: "host", native: "claude", id: "two", counters: ["inputTokens": 130, "outputTokens": 8, "cachedInputTokens": 100, "cacheCreationTokens": 20])
+        try execute(root, "INSERT INTO orchestration_v2_projection_provider_turns VALUES('context-only','provider-codex','host','{\"tokenUsage\":{\"usedTokens\":900000}}')")
+        let result = try scan(root)
+        let usage = try XCTUnwrap(result.sessions.first?.usage)
+        XCTAssertEqual(usage.input, 230)
+        XCTAssertEqual(usage.output, 28)
+        XCTAssertEqual(usage.total, 258)
+        XCTAssertEqual(usage.cacheRead, 180)
+        XCTAssertEqual(usage.cacheWrite, 20)
+        XCTAssertTrue(usage.totalIsPartial == true)
+        XCTAssertEqual(usage.chartSegments(for: .t3).reduce(0) { $0 + $1.value }, 258)
+        XCTAssertNotNil(result.nativeOwners["claude:claude"], "The installed Claude Agent driver must map to Claude records")
+        let overview = T3UsageReader.overview(home: root.path)
+        XCTAssertEqual(overview.usage?.total, 258)
+        XCTAssertTrue(overview.scope.contains("overlaps"))
+    }
+
+    func testOverallT3UsageExcludesChildChatsWorkersAndDeletedHistoryButIncludesArchivedChats() throws {
+        let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        try thread(root, id: "main"); try native(root, thread: "main", id: "main")
+        try consumption(root, thread: "main", native: "main", id: "main", counters: ["inputTokens": 100, "outputTokens": 20, "hasSubagents": true])
+        try native(root, thread: "main", id: "worker", owner: "worker-node")
+        try consumption(root, thread: "main", native: "worker", id: "worker", counters: ["inputTokens": 5000, "outputTokens": 1000])
+        try thread(root, id: "child", payload: ["lineage": ["parentThreadId": "main", "relationshipToParent": "subagent"]])
+        try native(root, thread: "child", id: "child")
+        try consumption(root, thread: "child", native: "child", id: "child", counters: ["inputTokens": 1000, "outputTokens": 100])
+        try thread(root, id: "archive", payload: ["archivedAt": stamp]); try native(root, thread: "archive", id: "archive")
+        try consumption(root, thread: "archive", native: "archive", id: "archive", counters: ["inputTokens": 20, "outputTokens": 0])
+        try thread(root, id: "deleted"); try native(root, thread: "deleted", id: "deleted")
+        try consumption(root, thread: "deleted", native: "deleted", id: "deleted", counters: ["inputTokens": 777, "outputTokens": 88])
+        try execute(root, "UPDATE orchestration_v2_projection_threads SET deleted_at=\(sqlLiteral(stamp)) WHERE thread_id='deleted'")
+        let overview = T3UsageReader.overview(home: root.path)
+        XCTAssertEqual(overview.sessions, 2)
+        XCTAssertEqual(overview.usage?.total, 140)
+        XCTAssertTrue(overview.usage?.totalIsPartial == true)
+        XCTAssertEqual(try scan(root).sessions.first { $0.sessionID == "child" }?.usage?.total, 1100, "A child can expose its own usage without adding it to the hosting aggregate")
+    }
+
+    func testInvalidAndUnavailableConsumptionStayUnknownWhileRecordedZeroIsPreserved() throws {
+        let root = try fixture(); defer { try? FileManager.default.removeItem(at: root) }
+        try thread(root, id: "missing"); try native(root, thread: "missing", id: "missing")
+        try consumption(root, thread: "missing", native: "missing", id: "bad-scope", counters: ["usageScope": "all_agents", "inputTokens": 999, "outputTokens": 99])
+        try consumption(root, thread: "missing", native: "missing", id: "unavailable", counters: ["usageStatus": "unavailable", "inputTokens": 1000, "outputTokens": 20])
+        try execute(root, "INSERT INTO orchestration_v2_projection_provider_turns VALUES('invalid','provider-missing','missing','{\"turnTokenUsage\":\"not-json\"}')")
+        XCTAssertNil(try scan(root).sessions.first?.usage)
+        try thread(root, id: "zero"); try native(root, thread: "zero", id: "zero")
+        try consumption(root, thread: "zero", native: "zero", id: "zero", counters: ["inputTokens": 0, "outputTokens": 0])
+        XCTAssertEqual(try scan(root).sessions.first { $0.sessionID == "zero" }?.usage?.total, 0)
+        XCTAssertTrue(T3UsageReader.overview(home: root.path).usage?.totalIsPartial == true)
+    }
+
+    func testDailyUsageCountsMeasuredT3HostOnceAndFallsBackToNativeWhenMissing() {
+        var host = Session(id: "t3:host", sessionID: "host", app: .t3, title: "Host", updatedAt: now, usage: TokenUsage(total: 60))
+        let native = Session(id: "codex:native", sessionID: "native", app: .codex, title: "Native", updatedAt: now, usage: TokenUsage(total: 100), hostSessionID: host.id)
+        var buckets = DailyTokenUsage.buckets(sessions: [host, native], now: now)
+        XCTAssertEqual(buckets.reduce(0) { $0 + $1.value }, 60)
+        XCTAssertEqual(buckets.filter { $0.app == .t3 }.reduce(0) { $0 + $1.value }, 60)
+        host.usage = nil
+        buckets = DailyTokenUsage.buckets(sessions: [host, native], now: now)
+        XCTAssertEqual(buckets.reduce(0) { $0 + $1.value }, 100)
+        host.usage = TokenUsage(total: 60); host.updatedAt = now.addingTimeInterval(-8 * 86400)
+        buckets = DailyTokenUsage.buckets(sessions: [host, native], now: now)
+        XCTAssertEqual(buckets.reduce(0) { $0 + $1.value }, 100, "An out-of-window host cannot suppress an in-window fallback")
+        host.updatedAt = now; host.isSubagent = true; host.usage = nil
+        buckets = DailyTokenUsage.buckets(sessions: [host, native], now: now)
+        XCTAssertEqual(buckets.reduce(0) { $0 + $1.value }, 0, "A known child host's native record must also be excluded")
+    }
+
     private func inventory() -> ProcessInventory {
         var result = ProcessInventory(); result.starts = [12345: "Fri Oct 23 12:00:00 2026"]; return result
     }
@@ -198,7 +272,8 @@ final class T3AdapterTests: XCTestCase {
         CREATE TABLE orchestration_v2_projection_messages(message_id TEXT PRIMARY KEY,thread_id TEXT,role TEXT,streaming INTEGER,created_at TEXT,updated_at TEXT,payload_json TEXT);
         CREATE TABLE orchestration_v2_projection_runtime_requests(thread_id TEXT,status TEXT,kind TEXT,created_at TEXT,payload_json TEXT);
         CREATE TABLE orchestration_v2_projection_turn_items(thread_id TEXT,run_id TEXT,type TEXT,status TEXT);
-        CREATE TABLE orchestration_v2_projection_provider_threads(thread_id TEXT,owner_node_id TEXT,payload_json TEXT);
+        CREATE TABLE orchestration_v2_projection_provider_threads(provider_thread_id TEXT PRIMARY KEY,thread_id TEXT,owner_node_id TEXT,payload_json TEXT);
+        CREATE TABLE orchestration_v2_projection_provider_turns(provider_turn_id TEXT PRIMARY KEY,provider_thread_id TEXT,thread_id TEXT,payload_json TEXT);
         """)
         return root
     }
@@ -216,8 +291,13 @@ final class T3AdapterTests: XCTestCase {
     private func request(_ root: URL, thread: String, kind: String, response: String = "live") throws {
         try execute(root, "INSERT INTO orchestration_v2_projection_runtime_requests VALUES(\(sqlLiteral(thread)),'pending',\(sqlLiteral(kind)),\(sqlLiteral(stamp)),\(try json(["responseCapability": ["type": response]])))")
     }
-    private func native(_ root: URL, thread: String, id: String, strength: String, owner: String? = nil) throws {
-        try execute(root, "INSERT INTO orchestration_v2_projection_provider_threads VALUES(\(sqlLiteral(thread)),\(owner.map(sqlLiteral) ?? "NULL"),\(try json(["nativeThreadRef": ["driver": "codex", "nativeId": id, "strength": strength], "contextUsage": ["usedTokens": 999]])))")
+    private func native(_ root: URL, thread: String, id: String, strength: String = "strong", owner: String? = nil, driver: String = "codex") throws {
+        try execute(root, "INSERT INTO orchestration_v2_projection_provider_threads VALUES(\(sqlLiteral("provider-" + id)),\(sqlLiteral(thread)),\(owner.map(sqlLiteral) ?? "NULL"),\(try json(["nativeThreadRef": ["driver": driver, "nativeId": id, "strength": strength], "contextUsage": ["usedTokens": 999]])))")
+    }
+    private func consumption(_ root: URL, thread: String, native: String, id: String, counters: [String: Any]) throws {
+        var usage: [String: Any] = ["usageScope": "main_agent", "usageStatus": "complete", "hasSubagents": false]
+        usage.merge(counters) { _, new in new }
+        try execute(root, "INSERT INTO orchestration_v2_projection_provider_turns VALUES(\(sqlLiteral(id)),\(sqlLiteral("provider-" + native)),\(sqlLiteral(thread)),\(try json(["turnTokenUsage": usage,"tokenUsage": ["usedTokens": 999999]])))")
     }
     private func json(_ value: [String: Any]) throws -> String { sqlLiteral(String(decoding: try JSONSerialization.data(withJSONObject: value), as: UTF8.self)) }
     private func execute(_ root: URL, _ sql: String) throws {

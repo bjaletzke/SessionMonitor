@@ -55,6 +55,9 @@ enum T3Adapter {
         let hasRequests = try tables.contains(requests) && db.columns(requests).isSuperset(of: ["thread_id", "status", "kind", "created_at", "payload_json"])
         let items = "orchestration_v2_projection_turn_items"
         let hasItems = try tables.contains(items) && db.columns(items).isSuperset(of: ["thread_id", "run_id", "type", "status"])
+        var usage: [String: T3UsageReader.Totals] = [:], usageError: String?
+        do { usage = try T3UsageReader.read(db: db, threadIDs: rows.compactMap { $0["thread_id"] }) }
+        catch { usageError = error.localizedDescription }
         var result = ScanResult(sessions: [])
         for row in rows {
             guard let id = row["thread_id"] else { continue }
@@ -79,10 +82,10 @@ enum T3Adapter {
                                   model: runSelection["model"] as? String ?? selection["model"] as? String ?? "",
                                   provider: runSelection["instanceId"] as? String ?? selection["instanceId"] as? String ?? payload["providerInstanceId"] as? String ?? "",
                                   workspace: workspace, origin: "T3 Code V2", updatedAt: updated,
-                                  sourcePath: file.path, completedAt: completed, gitBranch: payload["branch"] as? String ?? "",
+                                  sourcePath: file.path, completedAt: completed, usage: usage[id]?.usage, gitBranch: payload["branch"] as? String ?? "",
                                   record: SessionRecord(startedAt: LocalFiles.date(row["created_at"]), outcome: run["status"],
                                                         modelSource: "T3 Code run / thread selection",
-                                                        readCoverage: "Read-only T3 V2 projections and latest local message (up to 8,000 characters). Inherited fork history may be absent. Usage remains in the linked provider records; context occupancy is not a cumulative token total.",
+                                                        readCoverage: "Read-only T3 V2 projections and latest local message (up to 8,000 characters). Inherited fork history may be absent. Usage sums recorded turn consumption; context occupancy is not a cumulative token total.\(usageError.map { " Consumption unavailable: " + $0 } ?? "")",
                                                         relationshipCoverage: "Explicit lineage for loaded T3 chats and strong native-thread references"),
                                   environmentID: environmentID)
             let blockingInput = pending.contains { $0["kind"] == "user_input" && ($0["response_type"] != "message" || !active) }
@@ -131,7 +134,7 @@ enum T3Adapter {
             for row in nativeRows.prefix(4000) {
                 guard let host = row["thread_id"], let ref = object(row["payload_json"])["nativeThreadRef"] as? [String: Any],
                       ref["strength"] as? String == "strong", let native = ref["nativeId"] as? String, !native.isEmpty,
-                      let driver = ref["driver"] as? String, ["codex", "claude", "claude-code"].contains(driver) else { continue }
+                      let driver = ref["driver"] as? String, ["codex", "claudeAgent", "claude", "claude-code"].contains(driver) else { continue }
                 let app = driver == "codex" ? "codex" : "claude"
                 result.nativeOwners[app + ":" + native, default: []].insert(prefix + host)
             }

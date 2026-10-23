@@ -42,7 +42,7 @@ actor SessionCollector {
                 case .codex: note = "Read-only session index + bounded event tails. Live state is estimated; no control socket is used."
                 case .claude: note = "Local runtime registries with process identity checks + recent transcript metadata. Claude Code sessions and recent parent-linked subagent transcripts."
                 case .hermes: note = "Read-only databases for the root and named profiles. Turn leases are activity estimates."
-                case .t3: note = "Read-only V2 chat/run projections and latest local messages. Running states require a matching local server process. Native provider records are linked; token counters stay with those records."
+                case .t3: note = "Read-only V2 chats, runs, messages and recorded turn consumption. Active states require a matching local server process. Exact provider records are linked; T3 usage is a hosting view that overlaps provider archive totals."
                 case .harness: note = sessions.isEmpty ? "Ready for reports. Connect your harness using script/report_session.py." : "Local JSON reports with heartbeat expiry."
                 }
                 let message = warnings.isEmpty ? note : note + " Some profiles are unavailable: " + warnings.joined(separator: "; ")
@@ -67,7 +67,7 @@ actor SessionCollector {
         snapshot.sessions.sort {
             $0.state.priority == $1.state.priority ? $0.updatedAt > $1.updatedAt : $0.state.priority < $1.state.priority
         }
-        let paths = [configuration.codexHome, configuration.claudeHome, configuration.hermesHome].joined(separator: "\u{0}")
+        let paths = [configuration.codexHome, configuration.claudeHome, configuration.hermesHome, configuration.t3Home].joined(separator: "\u{0}")
         if start.timeIntervalSince(usageReadAt) >= 60 || paths != usagePaths {
             usageCache = UsageReader.scan(configuration); usageReadAt = start; usagePaths = paths
         }
