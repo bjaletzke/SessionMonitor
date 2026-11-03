@@ -16,7 +16,8 @@ actor SessionCollector {
         let start = Date(), processes = ProcessInventory()
         var snapshot = SessionSnapshot(scannedAt: start)
         let limit = min(2000, max(20, configuration.limit))
-        let sources: [(AgentApp, String)] = [(.codex, configuration.codexHome), (.claude, configuration.claudeHome), (.hermes, configuration.hermesHome), (.harness, configuration.harnessDirectory)]
+        let sources: [(AgentApp, String)] = [(.codex, configuration.codexHome), (.claude, configuration.claudeHome), (.hermes, configuration.hermesHome), (.t3, configuration.t3Home), (.harness, configuration.harnessDirectory)]
+        var nativeOwners: [String: Set<String>] = [:]
         for (app, rawPath) in sources {
             let path = LocalFiles.expanded(rawPath)
             do {
@@ -30,6 +31,10 @@ actor SessionCollector {
                     sessions = result.sessions
                     warnings = result.warnings
                 case .harness: sessions = try HarnessAdapter.scan(directory: path, limit: limit, now: start)
+                case .t3:
+                    let result = try T3Adapter.scan(home: path, limit: limit, processes: processes, now: start, requestedIDs: requestedRelated)
+                    sessions = result.sessions
+                    nativeOwners = result.nativeOwners
                 }
                 snapshot.sessions += sessions
                 let note: String
@@ -37,6 +42,7 @@ actor SessionCollector {
                 case .codex: note = "Read-only session index + bounded event tails. Live state is estimated; no control socket is used."
                 case .claude: note = "Local runtime registries with process identity checks + recent transcript metadata. Claude Code sessions and recent parent-linked subagent transcripts."
                 case .hermes: note = "Read-only databases for the root and named profiles. Turn leases are activity estimates."
+                case .t3: note = "Read-only V2 chats, runs, messages and recorded turn consumption. Active states require a matching local server process. Exact provider records are linked; T3 usage is a hosting view that overlaps provider archive totals."
                 case .harness: note = sessions.isEmpty ? "Ready for reports. Connect your harness using script/report_session.py." : "Local JSON reports with heartbeat expiry."
                 }
                 let message = warnings.isEmpty ? note : note + " Some profiles are unavailable: " + warnings.joined(separator: "; ")
@@ -45,6 +51,7 @@ actor SessionCollector {
                 snapshot.sources.append(SourceHealth(app: app, count: 0, available: false, message: error.localizedDescription, path: path))
             }
         }
+        T3Adapter.linkNativeSessions(&snapshot.sessions, owners: nativeOwners)
         // Add reverse startup/fork lineage only when the target is actually loaded.
         let positions = Dictionary(snapshot.sessions.enumerated().map { ($0.element.id, $0.offset) }, uniquingKeysWith: { old, _ in old })
         let originals = snapshot.sessions
@@ -60,7 +67,7 @@ actor SessionCollector {
         snapshot.sessions.sort {
             $0.state.priority == $1.state.priority ? $0.updatedAt > $1.updatedAt : $0.state.priority < $1.state.priority
         }
-        let paths = [configuration.codexHome, configuration.claudeHome, configuration.hermesHome].joined(separator: "\u{0}")
+        let paths = [configuration.codexHome, configuration.claudeHome, configuration.hermesHome, configuration.t3Home].joined(separator: "\u{0}")
         if start.timeIntervalSince(usageReadAt) >= 60 || paths != usagePaths {
             usageCache = UsageReader.scan(configuration); usageReadAt = start; usagePaths = paths
         }

@@ -12,6 +12,7 @@ enum SessionArchive {
                 ? "Hermes exposes bulk archive filters, but this installed CLI has no exact session-ID archive action. Open Hermes to archive this chat."
                 : "This provider has no supported archive interface connected to Session Monitor. Archive the chat in its original app."
         }
+        guard session.hostSessionID == nil else { return "This provider record belongs to a T3 Code chat. Archive the host chat in T3 Code." }
         guard !session.savedBookmark else { return "Refresh this chat from its source before archiving it." }
         guard !session.isSubagent else { return "Archive the parent chat in Codex; individual worker chats are managed by their parent." }
         guard [.idle, .responseReady, .done, .ended].contains(session.detectedState ?? session.state) else {

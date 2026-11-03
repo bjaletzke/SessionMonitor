@@ -139,11 +139,13 @@ final class ProviderDepthTests: XCTestCase {
         XCTAssertEqual(defaults.codexHome, "/example/home/.codex")
         XCTAssertEqual(defaults.claudeHome, "/example/home/.claude")
         XCTAssertEqual(defaults.hermesHome, "/example/home/.hermes")
+        XCTAssertEqual(defaults.t3Home, "/example/home/.t3")
         let overrides = ProviderDiscovery.configuration(environment: ["CODEX_HOME": "~/custom", "CLAUDE_CONFIG_DIR": "", "HERMES_HOME": "/example/profile", "SESSIONMONITOR_HARNESS_DIR": "/example/reports"], home: "/example/home")
         XCTAssertEqual(overrides.codexHome, "/example/home/custom")
         XCTAssertEqual(overrides.claudeHome, defaults.claudeHome)
         XCTAssertEqual(overrides.hermesHome, "/example/profile")
         XCTAssertEqual(overrides.harnessDirectory, "/example/reports")
+        XCTAssertEqual(ProviderDiscovery.configuration(environment: ["T3CODE_HOME": "~/custom-t3"], home: "/example/home").t3Home, "/example/home/custom-t3")
     }
     func testExecutableDiscoveryPATHExplicitOverrideAndMissingCLI() throws {
         let root = try directory(); defer { try? FileManager.default.removeItem(at: root) }

@@ -14,6 +14,7 @@ struct SessionContextView: View {
                         metadata("Origin", session.origin.isEmpty ? "Not recorded" : session.origin)
                         metadata("Session type", session.isSubagent ? "Subagent" : session.relations.contains(where: { $0.kind == .continuedFrom }) ? "Continuation" : "Main chat")
                         metadata("Session ID", session.sessionID)
+                        if let environment = session.environmentID { metadata("T3 environment", environment) }
                         if !session.agentRole.isEmpty { metadata("Agent role", session.agentRole) }
                         if !session.agentNickname.isEmpty { metadata("Agent name", session.agentNickname) }
                         if let path = session.record?.agentPath { metadata("Agent path", path) }
@@ -113,7 +114,7 @@ struct SessionContextView: View {
                                     if let outcome = related.record?.outcome { Text("Recorded outcome: " + outcome).font(.caption2).foregroundStyle(.secondary) }
                                     if related.savedBookmark {
                                         Text("Saved history · current activity unverified").font(.caption2).foregroundStyle(.secondary)
-                                        if [.codex, .hermes].contains(related.app) {
+                                        if [.codex, .hermes, .t3].contains(related.app) {
                                             Button("Load current source records") { Task { await store.loadRelated(relation.id) } }
                                                 .disabled(store.loadingRelatedID != nil || store.refreshing)
                                         }
@@ -121,7 +122,7 @@ struct SessionContextView: View {
                                 } else {
                                     Text(relation.title).font(.callout).lineLimit(2)
                                     Text("Outside current scan · activity and usage unknown").font(.caption2).foregroundStyle(.secondary)
-                                    if session.app == .codex || session.app == .hermes {
+                                    if [.codex, .hermes, .t3].contains(session.app) {
                                         Button("Load this related chat") { Task { await store.loadRelated(relation.id) } }
                                             .disabled(store.loadingRelatedID != nil || store.refreshing)
                                     } else { Text("Increase the load limit to inspect").font(.caption2).foregroundStyle(.secondary) }

@@ -27,6 +27,14 @@ final class UsageAndReviewTests: XCTestCase {
         XCTAssertEqual(segments.reduce(0) { $0 + $1.value }, usage.total)
     }
 
+    func testT3NormalizedSegmentsSubtractBothCacheKindsAndReasoning() {
+        let usage = TokenUsage(input: 130, output: 8, cacheRead: 100, cacheWrite: 20, reasoning: 3, total: 138)
+        let segments = usage.chartSegments(for: .t3)
+        XCTAssertEqual(segments, [TokenSegment(kind: .input, value: 10), TokenSegment(kind: .cacheRead, value: 100),
+                                  TokenSegment(kind: .cacheWrite, value: 20), TokenSegment(kind: .output, value: 5), TokenSegment(kind: .reasoning, value: 3)])
+        XCTAssertEqual(segments.reduce(0) { $0 + $1.value }, 138)
+    }
+
     func testChartSegmentsClampSubtractionsAndSkipMissingOrZeroCounters() {
         let codex = TokenUsage(input: 5, output: 2, cacheRead: 10, cacheWrite: 50, reasoning: 4)
         XCTAssertEqual(codex.chartSegments(for: .codex), [

@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 enum SidebarScope: Hashable {
-    case all, running, attention, review, bookmarks, worktrees, subagents, app(AgentApp), workspace(String), project(String)
+    case all, running, attention, review, bookmarks, worktrees, subagents, app(AgentApp), workspace(String), project(String), record(String)
     var title: String {
         switch self {
         case .all: "All sessions"
@@ -15,6 +15,7 @@ enum SidebarScope: Hashable {
         case .app(let app): app.rawValue
         case .workspace(let path): URL(fileURLWithPath: path).lastPathComponent
         case .project(let name): name
+        case .record: "Provider record"
         }
     }
 }
@@ -75,19 +76,30 @@ enum SidebarScope: Hashable {
         let cutoff = preferences.days == 0 ? Date.distantPast : Date().addingTimeInterval(-Double(preferences.days) * 86400)
         return allSessions.filter { library.annotation(for: $0.id).archivedInSourceAt == nil && ($0.updatedAt >= cutoff || $0.isOpen || $0.state == .running || $0.state.needsAction) }
     }
-    var recentSessions: [Session] { recentIncludingSubagents.filter { !$0.isSubagent } }
+    private var loadedHostIDs: Set<String> { Set(snapshot.sessions.filter { $0.app == .t3 }.map(\.id)) }
+    var recentSessions: [Session] {
+        let hosts = loadedHostIDs
+        return recentIncludingSubagents.filter { !$0.isSubagent && !hosts.contains($0.hostSessionID ?? "") }
+    }
+    var recentSubagents: [Session] {
+        let hosts = loadedHostIDs
+        return recentIncludingSubagents.filter { $0.isSubagent && !hosts.contains($0.hostSessionID ?? "") }
+    }
+    func applicationSessions(_ app: AgentApp) -> [Session] { recentIncludingSubagents.filter { !$0.isSubagent && $0.app == app } }
     var bookmarks: [Session] { allSessions.filter { library.annotation(for: $0.id).bookmarked } }
     var visibleSessions: [Session] {
         let base: [Session]
         switch scope ?? .all {
         case .bookmarks: base = bookmarks
-        case .subagents: base = recentIncludingSubagents.filter(\.isSubagent)
+        case .subagents: base = recentSubagents
+        case .app(let app): base = applicationSessions(app)
+        case .record(let id): base = allSessions.filter { $0.id == id }
         default: base = recentSessions
         }
         return base.filter { session in
             let matchesScope: Bool
             switch scope ?? .all {
-            case .all, .bookmarks, .subagents: matchesScope = true
+            case .all, .bookmarks, .subagents, .record: matchesScope = true
             case .running: matchesScope = session.state == .running
             case .attention: matchesScope = session.state.needsAction
             case .review: matchesScope = session.state == .responseReady
@@ -210,7 +222,7 @@ enum SidebarScope: Hashable {
     }
     func selectRelated(_ id: String) {
         guard let target = session(for: id) else { return }
-        scope = target.isSubagent ? .subagents : .all
+        scope = target.hostSessionID != nil ? .record(id) : target.isSubagent ? .subagents : .all
         search = ""
         if !recentIncludingSubagents.contains(where: { $0.id == id }) { preferences.days = 0 }
         selectedID = id; detailSection = .latest

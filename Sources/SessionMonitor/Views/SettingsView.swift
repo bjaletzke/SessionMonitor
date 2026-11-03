@@ -9,6 +9,7 @@ struct SettingsView: View {
                 TextField("Codex home", text: $preferences.codexHome)
                 TextField("Claude Code home", text: $preferences.claudeHome)
                 TextField("Hermes home", text: $preferences.hermesHome)
+                TextField("T3 Code home", text: $preferences.t3Home)
                 TextField("Harness reports", text: $preferences.harnessDirectory)
                 Text("Use absolute paths or ~. Hermes named profiles are discovered inside its home folder.")
                     .font(.caption).foregroundStyle(.secondary)

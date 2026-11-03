@@ -12,6 +12,7 @@
 | Codex | `~/.codex` | `CODEX_HOME` |
 | Claude Code | `~/.claude` | `CLAUDE_CONFIG_DIR` |
 | Hermes | `~/.hermes` | `HERMES_HOME` |
+| T3 Code V2 | `~/.t3` (reads `userdata/statev2.sqlite`) | `T3CODE_HOME` |
 | Harness reports | `~/Library/Application Support/SessionMonitor/events` | `SESSIONMONITOR_HARNESS_DIR` |
 
 On first launch, inherited environment values override standard defaults. Empty environment values use defaults. Values saved in Settings take precedence on later launches. Absolute paths and `~/` are supported. GUI apps opened from Finder often do not inherit shell variables: set paths in Settings when needed. Command-line snapshot/diagnostic modes use environment/defaults, independent of GUI preferences. For example:
@@ -21,6 +22,8 @@ CODEX_HOME=/absolute/path/to/codex-home .build/debug/SessionMonitor --diagnostic
 ```
 
 Hermes scans the selected home and `profiles/*/state.db` immediately beneath it. Pointing at a named profile reads that profile; it does not imply discovery of sibling profiles. Profile IDs stay separate. No auth files are needed. Runtime registries are optional/version-dependent and do not create a live runtime connection.
+
+T3 Code accepts its base home or `userdata` folder. It uses V2 projections from `statev2.sqlite`, plus the environment ID and local server PID/start metadata; no auth or secret files are read and no T3 process is launched by scanning. Legacy `state.sqlite` is not a fallback. Open T3 V2 once to create/migrate its data if it is unavailable. A different local T3 environment can be selected in Settings; remote T3 Connect environments are not fetched.
 
 ## Executables and native apps
 

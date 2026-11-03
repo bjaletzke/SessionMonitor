@@ -2,13 +2,14 @@ import Foundation
 import CoreFoundation
 
 enum AgentApp: String, CaseIterable, Codable, Sendable, Identifiable {
-    case codex = "Codex", claude = "Claude Code", hermes = "Hermes", harness = "Harness"
+    case codex = "Codex", claude = "Claude Code", hermes = "Hermes", t3 = "T3 Code", harness = "Harness"
     var id: String { rawValue }
     var symbol: String {
         switch self {
         case .codex: "terminal"
         case .claude: "asterisk"
         case .hermes: "paperplane"
+        case .t3: "bubble.left.and.bubble.right"
         case .harness: "point.3.connected.trianglepath.dotted"
         }
     }
@@ -91,6 +92,9 @@ struct Session: Identifiable, Codable, Sendable, Equatable {
     var isSubagent = false
     var savedBookmark = false
     var record: SessionRecord?
+    var environmentID: String?
+    /// Exact native-thread ownership reported by a loaded host chat.
+    var hostSessionID: String?
 
     var workspaceName: String {
         workspace.isEmpty ? "No workspace" : URL(fileURLWithPath: workspace).lastPathComponent
@@ -122,6 +126,7 @@ struct ScanConfiguration: Sendable {
     var hermesHome: String
     var harnessDirectory: String
     var limit: Int
+    var t3Home = ""
 }
 
 /// Counters retain provider semantics. Cached input/reasoning may be subsets;
@@ -145,14 +150,18 @@ struct TokenUsage: Codable, Sendable, Equatable {
         let (sum, overflow) = input.addingReportingOverflow(output)
         return overflow ? nil : sum
     }
-    /// Chart parts are disjoint: Codex cache/reasoning counters are subsets,
-    /// while Claude and Hermes record those counters separately.
+    /// Chart parts are disjoint: Codex cache/reasoning and T3's normalized
+    /// cache-read/cache-write/reasoning counters are subsets of input/output.
+    /// Native Claude and Hermes counters remain separate.
     func chartSegments(for app: AgentApp) -> [TokenSegment] {
         let parts: [(TokenSegment.Kind, Int64?)]
-        if app == .codex {
-            let uncached = input.map { max(0, $0) - min(max(0, $0), max(0, cacheRead ?? 0)) }
+        if app == .codex || app == .t3 {
+            let uncached = input.map { value in
+                let afterRead = max(0, value) - min(max(0, value), max(0, cacheRead ?? 0))
+                return app == .t3 ? afterRead - min(afterRead, max(0, cacheWrite ?? 0)) : afterRead
+            }
             let visible = output.map { max(0, $0) - min(max(0, $0), max(0, reasoning ?? 0)) }
-            parts = [(.input, uncached), (.cacheRead, cacheRead), (.output, visible), (.reasoning, reasoning)]
+            parts = [(.input, uncached), (.cacheRead, cacheRead)] + (app == .t3 ? [(.cacheWrite, cacheWrite)] : []) + [(.output, visible), (.reasoning, reasoning)]
         } else {
             parts = [(.input, input), (.output, output), (.cacheRead, cacheRead), (.cacheWrite, cacheWrite), (.reasoning, reasoning)]
         }

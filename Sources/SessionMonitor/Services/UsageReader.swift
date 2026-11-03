@@ -5,7 +5,8 @@ enum UsageReader {
     static func scan(_ config: ScanConfiguration) -> [UsageOverview] {
         [codex(home: LocalFiles.expanded(config.codexHome)),
          claude(home: LocalFiles.expanded(config.claudeHome)),
-         hermes(home: LocalFiles.expanded(config.hermesHome))]
+         hermes(home: LocalFiles.expanded(config.hermesHome)),
+         T3UsageReader.overview(home: LocalFiles.expanded(config.t3Home))]
     }
     static func codex(home: String) -> UsageOverview {
         do {
