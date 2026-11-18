@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Session Monitor · Chat analytics</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/explorer.css">
+  <link rel="stylesheet" href="/constellation.css">
+  <link rel="stylesheet" href="/atlas.css">
+  <link rel="stylesheet" href="/conversations.css">
+  <script src="/vendor/d3.min.js" defer></script>
+  <script src="/explorer.js" defer></script>
+  <script src="/atlas.js" defer></script>
+  <script src="/conversations.js" defer></script>
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">SM</span><span class="brand-name">Session Monitor<small>Chat analytics</small></span></div>
+    <nav class="viewnav" aria-label="Analytics views">
+      <span class="nav-group" aria-hidden="true">Visual</span>
+      <a href="#/atlas" data-view="atlas"><kbd>1</kbd>Atlas</a>
+      <a href="#/lab" data-view="lab"><kbd>2</kbd>Lab</a>
+      <a href="#/constellation" data-view="constellation"><kbd>3</kbd>Constellation</a>
+      <a href="#/explorer" data-view="explorer"><kbd>4</kbd>Explorer</a>
+      <span class="nav-group" aria-hidden="true">Data</span>
+      <a href="#/overview" data-view="overview"><kbd>5</kbd>Overview</a>
+      <a href="#/chats" data-view="chats"><kbd>6</kbd>Conversations <span id="chat-count" class="badge">0</span></a>
+      <a href="#/queries" data-view="queries"><kbd>7</kbd>Query</a>
+      <a href="#/connections" data-view="connections"><kbd>8</kbd>Connections</a>
+    </nav>
+    <div class="topbar-status">
+      <span class="live" title="Provider sources are opened read-only. Data stays on this machine."><span class="dot" aria-hidden="true"></span>Local · read-only</span>
+      <span id="updated" class="updated"></span>
+      <button id="refresh" class="button" type="button" title="Reread all configured sources">Refresh</button>
+    </div>
+  </header>
+  <section class="scopebar" aria-label="Shared selection">
+    <div id="filters" class="filters" aria-label="Global analytics filters">
+      <label class="field search"><span>Search</span><input id="search" type="search" placeholder="Chats, projects, recorded text" aria-label="Search conversations"></label>
+      <label class="field"><span>Connection</span><select id="source" aria-label="Harness or connection"></select></label>
+      <label class="field"><span>Project</span><select id="project" aria-label="Project"><option value="">All projects</option></select></label>
+      <label class="field"><span>Activity</span><select id="range" aria-label="Date range"><option value="30">Last 30 days</option><option value="7">Last 7 days</option><option value="90">Last 90 days</option><option value="0" selected>All loaded history</option></select></label>
+      <label class="field"><span>Model</span><select id="model" aria-label="Model"><option value="">All models</option></select></label>
+      <label class="field"><span>Provider / instance</span><select id="provider" aria-label="Provider"><option value="">All providers / instances</option></select></label>
+    </div>
+    <div class="scope-options">
+      <button id="scope-toggle" class="scope-toggle" type="button" aria-expanded="true" aria-controls="filters">Filters</button>
+      <p id="selection-summary" aria-live="polite">Loading conversations…</p>
+      <label class="check"><input type="checkbox" id="merge-copies" checked> Group exact copies</label>
+      <label class="check"><input type="checkbox" id="workers"> Include subagents</label>
+    </div>
+  </section>
+  <main id="workspace">
+    <div class="viewbar">
+      <h1 id="page-title">Project atlas</h1>
+      <p id="page-description"></p>
+      <button id="export" class="button" type="button">Export CSV</button>
+    </div>
+    <div id="error" role="alert" hidden></div>
+    <section id="atlas" class="view canvas-view"><div id="atlas-content" class="canvas-host"></div></section>
+    <section id="lab" class="view canvas-view" hidden><div id="lab-content" class="canvas-host"></div></section>
+    <section id="constellation" class="view canvas-view" hidden><div id="constellation-content" class="canvas-host"></div></section>
+    <section id="explorer" class="view" hidden><div id="explorer-content"></div></section>
+    <section id="overview" class="view" hidden>
+      <div id="metrics" class="metrics"></div>
+      <div id="conversation-metrics" class="metrics"></div>
+      <div class="chart-grid">
+        <article class="card"><div class="card-head"><div><h2>Token activity</h2><p>Recorded consumption by event date · UTC</p></div><span class="pill">Input + output</span></div><div id="timeline" class="timeline"></div><div class="legend"><span><i class="input"></i>Input</span><span><i class="output"></i>Output</span><span class="legend-note">Cache is included in T3 input. Claude cache is separate.</span></div></article>
+        <article class="card"><div class="card-head"><div><h2>Usage by model</h2><p>Chat lifetime counters in this selection</p></div></div><div id="models" class="models"></div></article>
+      </div>
+      <article class="card"><div class="card-head"><div><h2>Conversations to explore</h2><p>Highest recorded lifetime token usage in this selection</p></div><button id="all-chats" class="text-button" type="button">All conversations →</button></div><div id="top-table" class="table-wrap"></div></article>
+      <p class="scope-note" id="scope"></p>
+    </section>
+    <section id="chats" class="view" hidden><article class="card"><div class="card-head"><div><h2>Conversation table</h2><p>Select a conversation to inspect its messages, counters, terms, and relationships.</p></div><label class="field inline"><span>Sort</span><select id="sort" aria-label="Sort conversations"><option value="tokens">Most tokens</option><option value="recent">Most recent</option><option value="title">Title</option></select></label></div><div id="chat-table" class="table-wrap"></div></article></section>
+    <section id="queries" class="view" hidden>
+      <div class="query-grid"><article class="card query-editor"><div class="card-head"><div><h2>SQL</h2><p>SQLite · read-only · up to 500 result rows · ⌘/Ctrl+Enter runs</p></div><button id="run-query" class="button primary" type="button">Run query</button></div><label for="query-preset" class="sr-only">Example query</label><select id="query-preset"></select><label for="sql" class="sr-only">SQL query</label><textarea id="sql" spellcheck="false"></textarea><p class="query-note">The shared filters apply to all tables, including full available conversation measurements. Dated usage events also respect the date window.</p></article><article class="card schema"><div class="card-head"><h2>Schema</h2></div><div id="schema"></div></article></div>
+      <article class="card query-results"><div class="card-head"><h2>Results</h2><span id="result-count" class="muted">Run a query to explore</span></div><div id="query-table" class="table-wrap"></div></article>
+    </section>
+    <section id="connections" class="view" hidden><div id="connection-cards" class="connection-grid"></div><article class="card explanation"><h2>Follow the same selection across your sources</h2><p>The shared filters apply across every view. All connections compares your harnesses together. Group exact copies uses recorded T3/provider identities and matching snapshot IDs, preferring measured T3 records, then native counters. Unresolved identity matches and fork histories can still overlap.</p><p>Configure paths with the launch options. Refresh rebuilds this workspace from disk. The workspace does not send messages, run models, or change provider data.</p></article></section>
+  </main>
+  <dialog id="detail" aria-label="Conversation detail"><div class="detail-toolbar"><span class="eyebrow">Conversation detail</span><button id="close-detail" class="button" type="button" aria-label="Close conversation">Close <kbd>Esc</kbd></button></div><div id="detail-content"></div></dialog>
+</body>
+</html>
