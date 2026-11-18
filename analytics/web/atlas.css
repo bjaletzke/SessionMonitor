@@ -1,0 +1,78 @@
+/* Project atlas layout. Controls, list items, and readouts come from style.css. */
+.pa-atlas { display: flex; flex-direction: column; height: 100%; min-height: 560px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); }
+.pa-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--raised); }
+.pa-toolbar .seg { margin-right: auto; }
+.pa-toolbar select { width: 190px; }
+.pa-summary { display: flex; border-bottom: 1px solid var(--line); }
+.pa-summary > span { display: flex; align-items: baseline; gap: 8px; padding: 8px 14px; border-right: 1px solid var(--line); }
+.pa-summary strong { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--text); }
+.pa-body { display: grid; grid-template-columns: minmax(0, 1fr) 290px; flex: 1; min-height: 0; overflow: hidden; }
+.pa-stage { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0;
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 40px 40px; background-position: -1px -1px; }
+.pa-canvas { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.pa-canvas svg { display: block; width: 100%; height: 100%; touch-action: none; font-family: var(--sans); }
+.pa-status { padding: 6px 12px; border-top: 1px solid var(--line); background: var(--panel); font-family: var(--mono); font-size: 10.5px; color: var(--text-2); }
+.pa-zoom-hint { position: absolute; top: 8px; left: 10px; font-family: var(--mono); font-size: 10.5px; color: var(--muted); pointer-events: none; }
+.pa-tooltip { bottom: 40px; }
+.pa-footnote { padding: 7px 12px; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.5; color: var(--muted); }
+
+.pa-inspector { min-height: 0; overflow: auto; padding: 12px; border-left: 1px solid var(--line); background: var(--panel); }
+.pa-inspector h3 { margin: 4px 0 6px; font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
+.pa-inspector h4 { margin: 16px 0 6px; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.pa-inspector p { font-size: 11.5px; }
+.pa-path, .pa-identity { font-family: var(--mono); font-size: 10.5px !important; color: var(--muted) !important; overflow-wrap: anywhere; }
+.pa-identity { margin-top: 4px; }
+.pa-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 12px 0; background: var(--line); border: 1px solid var(--line); }
+.pa-facts > div { padding: 7px 9px; background: var(--panel); }
+.pa-facts strong { display: block; font-family: var(--mono); font-size: 17px; font-weight: 500; }
+.pa-facts span { display: block; margin-top: 2px; font-size: 10.5px; color: var(--muted); }
+.pa-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.pa-tags span { max-width: 100%; padding: 1px 5px; border: 1px solid var(--line-strong); font-family: var(--mono); font-size: 10.5px; color: var(--text-2); overflow-wrap: anywhere; }
+.pa-project-actions { display: grid; gap: 6px; margin: 14px 0; }
+.pa-project-actions .button { justify-content: center; }
+.pa-chat-list, .pa-project-directory { display: grid; gap: 4px; }
+.pa-project-directory { margin-top: 12px; }
+.pa-note { margin-top: 8px !important; font-size: 11.5px !important; color: var(--muted) !important; }
+
+/* Network and chord marks */
+.pa-network-link { stroke: var(--text-2); stroke-opacity: .28; cursor: pointer; }
+.pa-network-link:hover { stroke: var(--amber); stroke-opacity: .9; }
+.pa-graph-node { cursor: grab; }
+.pa-graph-node:active { cursor: grabbing; }
+.pa-node-core { fill-opacity: .9; stroke-width: 1; }
+.pa-node-project { fill: var(--raised); stroke: var(--text); stroke-width: 1.5; }
+.pa-graph-node:hover .pa-node-core { stroke: var(--amber); stroke-width: 2; }
+.pa-node-label { font-size: 11px; fill: var(--text); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; pointer-events: none; }
+.pa-node-value { font-family: var(--mono); font-size: 9.5px; fill: var(--muted); paint-order: stroke; stroke: var(--bg); stroke-width: 3px; pointer-events: none; }
+.pa-dim { opacity: .12 !important; }
+.pa-graph-node:focus-visible, .pa-chord-group:focus-visible, .pa-chord-ribbon:focus-visible { outline: 0; opacity: 1 !important; }
+.pa-graph-node:focus-visible .pa-node-core, .pa-chord-group:focus-visible path, .pa-chord-ribbon:focus-visible { stroke: var(--amber); stroke-width: 2; }
+.pa-chord-group { cursor: pointer; }
+.pa-chord-group path { stroke: var(--bg); }
+.pa-chord-project { fill: var(--line-strong); }
+.pa-chord-group:hover .pa-chord-project { fill: var(--muted); }
+.pa-chord-group text { font-size: 11px; fill: var(--text-2); }
+.pa-chord-ribbon { fill-opacity: .45; stroke: var(--bg); stroke-width: .6; cursor: pointer; }
+.pa-chord-ribbon:hover { fill-opacity: .85; }
+.pa-chord-center { font-family: var(--mono); font-size: 24px; font-weight: 500; fill: var(--text); pointer-events: none; }
+.pa-chord-center-label { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; fill: var(--muted); pointer-events: none; }
+.pa-empty { display: flex; align-items: center; justify-content: center; min-height: 300px; height: 100%; padding: 40px; text-align: center; font-size: 12px; color: var(--muted); }
+
+@media (max-width: 1100px) {
+  .pa-body { grid-template-columns: minmax(0, 1fr) 240px; }
+  .pa-toolbar select { width: auto; flex: 1 1 140px; }
+}
+@media (max-width: 800px) {
+  .pa-atlas { height: auto; }
+  .pa-toolbar .seg { margin-right: 0; flex: 1 1 100%; }
+  .pa-toolbar .seg button { flex: 1; }
+  .pa-summary { flex-wrap: wrap; }
+  .pa-summary > span { flex: 1 1 50%; border-bottom: 1px solid var(--line); }
+  .pa-body { display: flex; flex-direction: column; overflow: visible; }
+  .pa-stage { height: 460px; flex: none; }
+  .pa-inspector { max-height: 380px; border-left: 0; border-top: 1px solid var(--line); }
+  .pa-project-directory { grid-template-columns: 1fr 1fr; }
+}
+.pa-chord-center, .pa-chord-center-label { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }

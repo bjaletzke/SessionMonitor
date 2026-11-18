@@ -1,0 +1,2 @@
+# Keep published dependency files intact and collapse them in code reviews.
+analytics/web/vendor/** linguist-vendored -whitespace

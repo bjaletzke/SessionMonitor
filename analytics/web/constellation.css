@@ -1,0 +1,31 @@
+/* Constellation layout. Controls, list items, and readouts come from style.css. */
+.constellation { display: flex; flex-direction: column; height: 100%; min-height: 560px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); }
+.constellation-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--raised); }
+.constellation-actions { display: flex; align-items: center; gap: 8px; }
+.constellation-group-label > span { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.constellation-group-label select { width: 160px; }
+.constellation-stage { position: relative; flex: 1; min-height: 240px; overflow: hidden; background: var(--bg); }
+.constellation-canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+.constellation-labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.constellation-cluster { position: absolute; top: 0; left: 0; width: max-content; max-width: 180px; padding: 3px 7px; border: 1px solid var(--line-strong); border-left: 2px solid var(--accent); background: #0b0e11e0; }
+.constellation-cluster strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 600; color: var(--text); }
+.constellation-cluster small { display: block; margin-top: 1px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.constellation-tooltip strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.constellation-caption { display: flex; flex-wrap: wrap; gap: 4px 16px; min-width: 0; font-family: var(--mono); font-size: 10.5px; color: var(--text-2); }
+.constellation-note { padding: 6px 12px; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.5; color: var(--muted); }
+.constellation-directory { flex: none; max-height: 34%; overflow: auto; border-top: 1px solid var(--line); font-size: 12px; color: var(--text-2); }
+.constellation-directory summary { position: sticky; top: 0; padding: 7px 12px; background: var(--raised); cursor: pointer; font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+.constellation-directory summary:hover { color: var(--text); }
+.constellation-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 8px 12px 12px; }
+.constellation-fallback { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 240px; padding: 40px; text-align: center; font-size: 12px; color: var(--muted); }
+@media (max-width: 800px) {
+  .constellation { height: auto; }
+  .constellation-heading { justify-content: stretch; }
+  .constellation-caption > :last-child { display: none; }
+  .constellation-actions { width: 100%; }
+  .constellation-group-label { flex: 1; }
+  .constellation-group-label select { flex: 1; width: auto; }
+  .constellation-stage { flex: none; height: 380px; }
+  .constellation-directory { max-height: none; }
+  .constellation-list { grid-template-columns: 1fr; }
+}

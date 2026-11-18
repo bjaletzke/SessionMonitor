@@ -1,0 +1,65 @@
+/* Conversation lab layout. Controls, list items, and readouts come from style.css. */
+.cl-laboratory { display: flex; flex-direction: column; height: 100%; min-height: 560px; overflow: hidden; background: var(--panel); border: 1px solid var(--line); }
+.cl-metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+.cl-metric { min-width: 0; padding: 8px 12px; background: var(--panel); }
+.cl-metric-label { display: block; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cl-metric strong { font-family: var(--mono); font-size: 19px; font-weight: 500; color: var(--text); }
+.cl-metric small { margin-left: 6px; font-size: 11px; color: var(--muted); }
+.cl-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--raised); }
+.cl-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.cl-control-label { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.cl-control-label select { width: 220px; font-family: var(--sans); letter-spacing: 0; text-transform: none; }
+.cl-caption { padding: 6px 12px; border-bottom: 1px solid var(--line); font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.cl-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 290px; flex: 1; min-height: 0; }
+.cl-canvas { position: relative; display: flex; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg); }
+.cl-chart { width: 100%; height: 100%; min-height: 300px; overflow: auto; }
+.cl-chart svg { display: block; font-family: var(--sans); }
+.cl-axis text { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+.cl-axis path, .cl-axis line { stroke: var(--line-strong); }
+.cl-grid line { stroke: var(--grid); }
+.cl-grid path { display: none; }
+.cl-axis-title { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; fill: var(--muted); }
+.cl-histogram-bar { cursor: pointer; }
+.cl-histogram-bar:hover, .cl-histogram-bar:focus-visible { stroke: var(--amber); stroke-width: 1.5px; }
+.cl-histogram-bar.muted, .cl-bubble.muted { opacity: .15; }
+.cl-histogram-bar:focus, .cl-bubble:focus, .cl-comparison-row:focus { outline: none; }
+.cl-median-line { stroke: var(--amber); stroke-width: 1px; stroke-dasharray: 4 3; }
+.cl-median-label { font-family: var(--mono); font-size: 10.5px; fill: var(--amber); }
+.cl-brush .overlay { cursor: crosshair; }
+.cl-brush .selection { fill: var(--amber); fill-opacity: .08; stroke: var(--amber); stroke-dasharray: 3 3; }
+.cl-brush .handle { fill: var(--amber); }
+.cl-bubble { cursor: pointer; }
+.cl-bubble:hover, .cl-bubble:focus-visible { fill-opacity: 1; stroke: var(--amber); stroke-width: 2px; }
+.cl-project-legend text { font-size: 11px; fill: var(--text-2); }
+.cl-comparison-row { cursor: pointer; }
+.cl-comparison-row:hover rect, .cl-comparison-row:focus-visible rect { fill: var(--hover); }
+.cl-comparison-label { font-size: 11.5px; fill: var(--text-2); }
+
+.cl-inspector { min-width: 0; min-height: 0; overflow-y: auto; padding: 12px; border-left: 1px solid var(--line); background: var(--panel); }
+.cl-inspector-heading h3 { margin: 4px 0 4px; font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; }
+.cl-inspector-heading p { font-size: 11.5px; color: var(--muted); }
+.cl-small-heading { margin: 16px 0 6px; }
+.cl-chat { margin-top: 4px; }
+.cl-chat-list { display: grid; gap: 4px; }
+.cl-selection-stats { display: grid; gap: 2px; margin: 10px 0; font-family: var(--mono); font-size: 11px; color: var(--text-2); }
+.cl-project-action { display: block; margin: 0 0 10px; }
+.cl-inspector-empty, .cl-inspector-footnote { margin: 10px 0; font-size: 11.5px; color: var(--muted); }
+.cl-coverage { padding: 6px 12px; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.5; color: var(--muted); }
+.cl-empty { display: flex; align-items: center; justify-content: center; min-height: 300px; padding: 24px; text-align: center; font-size: 12px; color: var(--muted); }
+
+@media (max-width: 1100px) {
+  .cl-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cl-workspace { grid-template-columns: minmax(0, 1fr) 240px; }
+}
+@media (max-width: 800px) {
+  .cl-laboratory { height: auto; }
+  .cl-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cl-toolbar .seg { width: 100%; }
+  .cl-toolbar .seg button { flex: 1; padding: 0 6px; }
+  .cl-controls { width: 100%; }
+  .cl-control-label { flex: 1 1 100%; }
+  .cl-control-label select { flex: 1; width: auto; min-width: 0; }
+  .cl-workspace { display: flex; flex-direction: column; }
+  .cl-canvas, .cl-chart { min-height: 400px; }
+  .cl-inspector { max-height: 320px; border-left: 0; border-top: 1px solid var(--line); }
+}

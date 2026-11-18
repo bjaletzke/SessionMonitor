@@ -1,0 +1,39 @@
+/* Usage explorer layout. Controls and list items come from style.css. */
+.ae-explorer { overflow: hidden; background: var(--panel); border: 1px solid var(--line); }
+.ae-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--raised); }
+.ae-metric-label { margin-left: auto; }
+.ae-metric-label > span { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.ae-metric { width: 200px; }
+.ae-caption { padding: 6px 12px; border-bottom: 1px solid var(--line); font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+.ae-chart { width: 100%; min-height: 190px; padding: 10px 0 0; overflow-x: auto; overscroll-behavior-x: contain; background: var(--bg); }
+.ae-chart svg { display: block; max-width: none; font-family: var(--sans); }
+.ae-column-labels text { font-size: 11px; font-weight: 600; fill: var(--text); }
+.ae-row-labels text { font-size: 11px; fill: var(--text-2); }
+.ae-cell text { font-family: var(--mono); font-size: 11px; pointer-events: none; }
+.ae-cell[role=button], .ae-day[role=button], .ae-point { cursor: pointer; }
+.ae-cell[role=button]:hover rect, .ae-cell[role=button]:focus-visible rect, .ae-day[role=button]:hover, .ae-day[role=button]:focus-visible { stroke: var(--amber); stroke-width: 2; }
+.ae-cell:focus, .ae-point:focus, .ae-day:focus { outline: none; }
+.ae-point { stroke: var(--bg); stroke-width: 1; }
+.ae-point:hover, .ae-point:focus-visible { stroke: var(--amber); stroke-width: 2; fill-opacity: 1; }
+.ae-axis text, .ae-weekday, .ae-month { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+.ae-axis-title { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; fill: var(--muted); }
+.ae-axis line, .ae-axis path { stroke: var(--line-strong); }
+.ae-tooltip { padding: 7px 12px; border-top: 1px solid var(--line); border-left: 2px solid var(--amber); background: var(--raised); font-family: var(--mono); font-size: 11px; line-height: 1.6; color: var(--text-2); }
+.ae-tooltip strong, .ae-tooltip span { display: block; }
+.ae-tooltip strong { font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--text); }
+.ae-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 12px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 10.5px; color: var(--text-2); }
+.ae-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.ae-legend-item i { width: 8px; height: 8px; }
+.ae-selection { padding: 10px 12px 12px; border-top: 1px solid var(--line); }
+.ae-selection p { font-size: 11.5px; color: var(--muted); }
+.ae-selection-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+.ae-selection-heading strong { font-size: 13px; font-weight: 600; }
+.ae-selection-heading > span { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.ae-chat-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin-bottom: 8px; }
+.ae-empty { padding: 60px 20px; text-align: center; font-size: 12px; color: var(--muted); }
+@media (max-width: 800px) {
+  .ae-toolbar .seg { width: 100%; }
+  .ae-toolbar .seg button { flex: 1; padding: 0 6px; }
+  .ae-metric-label { margin-left: 0; }
+  .ae-chat-list { grid-template-columns: 1fr; }
+}
